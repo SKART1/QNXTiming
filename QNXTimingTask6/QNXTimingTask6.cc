@@ -14,18 +14,60 @@ int main(int argc, char *argv[]) {
 
 	if(userParametrsStruct.researchedFunctions==SetGetClockPeriod){
 		_clockperiod clcnew={userParametrsStruct.newClockPeriod,0}, clcold, clcout;
+		unsigned * threadMask;
+		struct timespec startTime;
+		uint64_t startClockCycles;
+		struct timespec endTime;
+		uint64_t endClockCycles;
+
+		/*Block program on one thread*/
+		threadMask=(unsigned *)malloc(sizeof(*threadMask)*RMSK_SIZE(_syspage_ptr->num_cpu));
+		*threadMask=0x1; //let the code be run on only first CPU
+		DEBUG_PRINT_MSG_MY("INFO", "Setting new runmask!");
+		ThreadCtl(_NTO_TCTL_RUNMASK_GET_AND_SET, (void *)threadMask);
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 3,"[INFO]: Runmask is changed!");
+		DEBUG_PRINT_MSG_MY("INFO", "New runmask is set!");
+
+		/*Get time at the start of the program*/
+		if(clock_gettime( CLOCK_REALTIME, &startTime) == -1 ) {
+			perror( "clock gettime" );
+			return EXIT_FAILURE;
+		}
+		startClockCycles=ClockCycles();
+
+
 		std::cerr<<"[INFO]: Setting new ClockPeriod: "<<userParametrsStruct.newClockPeriod<<std::endl;
 		ClockPeriod (CLOCK_REALTIME, &clcnew, &clcold, 0);
 		ClockPeriod (CLOCK_REALTIME, NULL, &clcout, 0);
 		uint64_t cps = SYSPAGE_ENTRY(qtime)->cycles_per_sec;
-		std::cerr<<"ClockPeriod: old="<<clcold.nsec<<"new="<<clcout.nsec<<std::endl<<"ClockPerSec="<<CLOCKS_PER_SEC<<"Processor: "<<cps<<"cycles per sec"<<std::flush<<std::endl;
-		std::cerr<<"Let`s let OS to pork with this settings for example 2 minutes"<<std::endl;
-		sleep(120);
+		std::cerr<<"ClockPeriod: old="<<clcold.nsec<<" new="<<clcout.nsec<<std::endl<<"ClockPerSec="<<CLOCKS_PER_SEC<<" Processor: "<<cps<<" cycles per sec"<<std::flush<<std::endl;
+		std::cerr<<"Let`s let OS to pork with this settings for example 1 minute"<<std::endl;
+		sleep(60);
 		std::cerr<<"If you see this program still executed. Restoring old settings!"<<std::endl;
 		ClockPeriod (CLOCK_REALTIME, &clcold, &clcout, 0);
-		ClockPeriod (CLOCK_REALTIME, NULL, &clcout, 0);
 		cps = SYSPAGE_ENTRY(qtime)->cycles_per_sec;
-		std::cerr<<"ClockPeriod: old="<<clcout.nsec<<"new="<<clcold.nsec<<std::endl<<"ClockPerSec="<<CLOCKS_PER_SEC<<"Processor: "<<cps<<"cycles per sec"<<std::flush<<std::endl;
+		std::cerr<<"ClockPeriod: old="<<clcout.nsec<<" new="<<clcold.nsec<<std::endl<<" ClockPerSec="<<CLOCKS_PER_SEC<<" Processor: "<<cps<<" cycles per sec"<<std::flush<<std::endl;
+
+		/*Get time and clock cycles at the end*/
+		if(clock_gettime( CLOCK_REALTIME, &endTime) == -1 ) {
+			perror( "clock gettime" );
+			return EXIT_FAILURE;
+		}
+		endClockCycles=ClockCycles();
+		double microsecondsPerCycle=(SYSPAGE_ENTRY(qtime) -> cycles_per_sec)/1000000L;
+		std::cout<<"[INFO]: Time has passed: "<<((endTime.tv_sec-1)-startTime.tv_sec)*1000LL*1000LL+((endTime.tv_nsec+1000000000LL)-startTime.tv_nsec)/1000LL<<" micro seconds" <<std::endl;
+		std::cout<<"[INFO]: Processor said it has passed: "/*<<(endClockCycles-startClockCycles)/cyclesPerSec<<" seconds. Or: "*/<<(endClockCycles-startClockCycles)/microsecondsPerCycle<<" micro seconds"<<std::endl;
+
+		/*Restoring old runmask*/
+		(*threadMask)=(unsigned)0x00000000;
+		for(int i=_syspage_ptr->num_cpu; i>0; i--){
+			(*threadMask)=(*threadMask)|(1<<(i-1));
+		};
+		DEBUG_PRINT_MSG_MY("INFO", "Restoring old runmask!");
+		ThreadCtl(_NTO_TCTL_RUNMASK,(void *)threadMask);
+		TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 3,"[INFO]: Old runmask restored!");
+		DEBUG_PRINT_MSG_MY("INFO", "Old runmask restored!");
+		free(threadMask);
 	}
 	else if(userParametrsStruct.researchedFunctions==SetGetPOSIXTimeOfClock){
 		/*
