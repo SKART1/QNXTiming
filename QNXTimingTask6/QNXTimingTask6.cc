@@ -70,31 +70,6 @@ int main(int argc, char *argv[]) {
 		free(threadMask);
 	}
 	else if(userParametrsStruct.researchedFunctions==SetGetPOSIXTimeOfClock){
-		/*
-		 * This program calculates the time required to
-		 * execute the program specified as its first argument.
-		 * The time is printed in seconds, on standard out.
-		 */
-		struct timespec start, stop;
-		double accum;
-
-		if( clock_gettime( CLOCK_REALTIME, &start) == -1 ) {
-		  perror( "clock gettime" );
-		  return EXIT_FAILURE;
-		}
-
-		char systemProgramm[]="find | grep test";
-		system( systemProgramm );
-
-		if( clock_gettime( CLOCK_REALTIME, &stop) == -1 ) {
-		  perror( "clock gettime" );
-		  return EXIT_FAILURE;
-		}
-
-		accum = ( stop.tv_sec - start.tv_sec ) + (double)( stop.tv_nsec - start.tv_nsec )/ (double)1000000000L;
-		printf( "Call system  %s %lf\n", systemProgramm, accum );
-
-
 		/*Set new time. Restoring old time*/
 		struct timespec oldTime, newTimeStart, newTimeFinish;
 		if(clock_gettime( CLOCK_REALTIME, &oldTime) == -1 ) {
@@ -112,12 +87,20 @@ int main(int argc, char *argv[]) {
 
 
 		if(clock_gettime( CLOCK_REALTIME, &newTimeFinish) == -1 ) {
-					perror( "clock settime" );
-					return EXIT_FAILURE;
-				}
+			perror( "clock settime" );
+			return EXIT_FAILURE;
+		}
 
-		oldTime.tv_sec=oldTime.tv_sec+(newTimeFinish.tv_sec-newTimeStart.tv_sec);
-		oldTime.tv_nsec=oldTime.tv_nsec+(newTimeFinish.tv_nsec-newTimeStart.tv_nsec);
+
+		if((oldTime.tv_nsec+newTimeFinish.tv_nsec-newTimeStart.tv_nsec)>1000000000L){
+			oldTime.tv_sec=oldTime.tv_sec+(newTimeFinish.tv_sec-newTimeStart.tv_sec);
+			oldTime.tv_nsec=oldTime.tv_nsec+(newTimeFinish.tv_nsec-newTimeStart.tv_nsec)-1000000000L;
+		}
+		else{
+			oldTime.tv_sec=oldTime.tv_sec+(newTimeFinish.tv_sec-newTimeStart.tv_sec);
+			oldTime.tv_nsec=oldTime.tv_nsec+(newTimeFinish.tv_nsec-newTimeStart.tv_nsec)-1000000000L;
+		}
+
 		if(clock_settime( CLOCK_REALTIME, &oldTime) == -1 ) {
 			perror( "clock settime" );
 			return EXIT_FAILURE;
@@ -126,8 +109,23 @@ int main(int argc, char *argv[]) {
 		return EXIT_SUCCESS;
 	}
 	else if(userParametrsStruct.researchedFunctions==SetGetQNXTimeOfClock){
+		uint64_t newTime;
+		uint64_t oldTime;
+
+		if(ClockTime(CLOCK_REALTIME, &newTime, &oldTime) == -1 ) {
+			perror( "[ERROR]: ClockTime" );
+			return EXIT_FAILURE;
+		}
+		std::cout<<"[INFO]: Current time is: "<<oldTime.tv_sec<<" seconds"<<oldTime.tv_nsec<<" nanoseconds"<<std::endl;
 
 
+		if(ClockTime(CLOCK_REALTIME, &oldTime, &newTime) == -1 ) {
+			perror( "clock settime" );
+			return EXIT_FAILURE;
+		}
+		std::cout<<"[INFO]: New time is set. Time is: "<<newTimeStart.tv_sec<<" seconds"<<newTimeStart.tv_nsec<<" nanoseconds"<<std::endl;
+		std::cout<<"[INFO]: Restoring old time"<<std::endl;
+		return EXIT_SUCCESS;
 	}
 	else if(userParametrsStruct.researchedFunctions==ClockAdjustFunc){
 		unsigned * threadMask;

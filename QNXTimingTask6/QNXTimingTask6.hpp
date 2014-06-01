@@ -24,6 +24,7 @@
 
 	#include <time.h> //for clock_gettime
 
+	#include <sys/neutrino.h> //for ClockTime()
 typedef enum{
 	SetGetClockPeriod,
 	SetGetPOSIXTimeOfClock,
