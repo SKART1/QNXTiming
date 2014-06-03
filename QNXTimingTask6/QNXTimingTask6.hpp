@@ -10,7 +10,7 @@
 	#include <cstdlib>
 	#include <iostream>
 	#include <unistd.h>
-	#include <inttypes.h>.h > 	//for uint64_t
+	#include <inttypes.h>	//for uint64_t
 	#include <unistd.h> 	//for getopt
 	#include <stdlib.h>     //for atol
 	#include <sys/syspage.h> //for SYSPAGE_ENTRY(qtime)
@@ -25,6 +25,9 @@
 	#include <time.h> //for clock_gettime
 
 	#include <sys/neutrino.h> //for ClockTime()
+
+	#include <string> //for std::string
+	#include <pthread.h> //for pthread
 typedef enum{
 	SetGetClockPeriod,
 	SetGetPOSIXTimeOfClock,
@@ -38,7 +41,7 @@ typedef struct{
 	//For ClockPeriod() function (SetGetClockPeriod);
 	unsigned long int  newClockPeriod;
 	//For clock_settime() function (SetGetPOSIXTimeOfClock)
-	unsigned long int secondsFrom1970;
+	unsigned long long int secondsFrom1970;
 	//For ClockTime()  (SetGetQNXTimeOfClock)
 	uint64_t nanosecAbsoluteTime;
 	//For clock adjust (ClockAdjust)

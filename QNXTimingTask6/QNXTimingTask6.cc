@@ -1,7 +1,15 @@
 #include "QNXTimingTask6.hpp"
 #include "ParseParametrsMy.hpp"
 #include "DebugInfoOut.hpp"
-#include <string>
+
+
+
+
+/*------------------------------------------------------------------------------------*/
+static void sigusr1Handler(int signo,siginfo_t *info, void *other) {
+	std::cout<<"[INFO]: In handler 1"<<std::endl;
+}
+/*------------------------------------------------------------------------------------*/
 
 
 int main(int argc, char *argv[]) {
@@ -70,21 +78,77 @@ int main(int argc, char *argv[]) {
 		free(threadMask);
 	}
 	else if(userParametrsStruct.researchedFunctions==SetGetPOSIXTimeOfClock){
+		sigevent sigeventObject;
+		itimerspec timeDescriptorStruct;
+		struct sigaction act;
+
+		timer_t timerDescriptor;
+		timespec   currentTimeDescriptorStruct;
+		//Register POSIX signal handler
+		act.sa_sigaction = &sigusr1Handler;
+		act.sa_flags = 0;
+		if (sigaction(SIGUSR1, &act, 0) < 0) {
+			perror("[ERROR]: sigaction registering");
+			return -1;
+		}
+
+		//Create structure with pulse. Priority is the same as in major thread.
+		sigeventObject.sigev_notify = SIGEV_SIGNAL_CODE;
+		sigeventObject.sigev_signo = SIGUSR1;
+		sigeventObject.sigev_code=SI_MINAVAIL+6;
+
+
+		//Create timer
+		if(timer_create( CLOCK_REALTIME, &sigeventObject ,&timerDescriptor)==-1){
+			perror("[ERROR]: timer_create");
+			return -1;
+		}
+		//Set timer mode
+
+		timeDescriptorStruct.it_value.tv_sec = 120;
+		timeDescriptorStruct.it_value.tv_nsec= 0;
+
+		//Single. Means not repeat
+		timeDescriptorStruct.it_interval.tv_sec =  NULL;
+		timeDescriptorStruct.it_interval.tv_nsec = NULL;
+
+		//Set timer mode
+		//Fire in %CURRENT_TIME% + 1.5 sec
+		if(clock_gettime( CLOCK_REALTIME, &currentTimeDescriptorStruct)==-1){
+			perror("[ERROR]: clock_gettime");
+			return -1;
+		};
+		timeDescriptorStruct.it_value.tv_sec =currentTimeDescriptorStruct.tv_sec+600;
+		timeDescriptorStruct.it_value.tv_nsec=currentTimeDescriptorStruct.tv_nsec;
+
+		//Single. Means not repeat
+		timeDescriptorStruct.it_interval.tv_sec = NULL;
+		timeDescriptorStruct.it_interval.tv_nsec = NULL;
+
+		//Set new type
+		timer_settime(timerDescriptor, TIMER_ABSTIME , &timeDescriptorStruct, NULL);
+
+
+
+
+
 		/*Set new time. Restoring old time*/
 		struct timespec oldTime, newTimeStart, newTimeFinish;
 		if(clock_gettime( CLOCK_REALTIME, &oldTime) == -1 ) {
 			perror( "clock gettime" );
 			return EXIT_FAILURE;
 		}
-		std::cout<<"[INFO]: Current time is: "<<oldTime.tv_sec<<" seconds"<<oldTime.tv_nsec<<" nanoseconds"<<std::endl;
+		std::cout<<"[INFO]: Current time is: "<<oldTime.tv_sec<<" seconds "<<oldTime.tv_nsec<<" nanoseconds"<<std::endl;
 
-
+		newTimeStart.tv_sec =userParametrsStruct.secondsFrom1970/1000000000LL;
+		newTimeStart.tv_nsec=userParametrsStruct.secondsFrom1970%1000000000LL;
 		if(clock_settime( CLOCK_REALTIME, &newTimeStart) == -1 ) {
 			perror( "clock settime" );
 			return EXIT_FAILURE;
 		}
-		std::cout<<"[INFO]: New time is set. Time is: "<<newTimeStart.tv_sec<<" seconds"<<newTimeStart.tv_nsec<<" nanoseconds"<<std::endl;
+		std::cout<<"[INFO]: New time is set. Time is: "<<newTimeStart.tv_sec<<" seconds "<<newTimeStart.tv_nsec<<" nanoseconds"<<std::endl;
 
+		sleep(10);
 
 		if(clock_gettime( CLOCK_REALTIME, &newTimeFinish) == -1 ) {
 			perror( "clock settime" );
@@ -92,20 +156,20 @@ int main(int argc, char *argv[]) {
 		}
 
 
-		if((oldTime.tv_nsec+newTimeFinish.tv_nsec-newTimeStart.tv_nsec)>1000000000L){
-			oldTime.tv_sec=oldTime.tv_sec+(newTimeFinish.tv_sec-newTimeStart.tv_sec);
+		if((oldTime.tv_nsec+(newTimeFinish.tv_nsec-newTimeStart.tv_nsec))>1000000000L){
+			oldTime.tv_sec=oldTime.tv_sec+(newTimeFinish.tv_sec-newTimeStart.tv_sec)+1;
 			oldTime.tv_nsec=oldTime.tv_nsec+(newTimeFinish.tv_nsec-newTimeStart.tv_nsec)-1000000000L;
 		}
 		else{
 			oldTime.tv_sec=oldTime.tv_sec+(newTimeFinish.tv_sec-newTimeStart.tv_sec);
-			oldTime.tv_nsec=oldTime.tv_nsec+(newTimeFinish.tv_nsec-newTimeStart.tv_nsec)-1000000000L;
+			oldTime.tv_nsec=oldTime.tv_nsec+(newTimeFinish.tv_nsec-newTimeStart.tv_nsec);
 		}
 
 		if(clock_settime( CLOCK_REALTIME, &oldTime) == -1 ) {
 			perror( "clock settime" );
 			return EXIT_FAILURE;
 		}
-		std::cout<<"[INFO]: Restoring previous time. Time is: "<<std::endl;
+		std::cout<<"[INFO]: Restoring previous time. "<<std::endl;
 		return EXIT_SUCCESS;
 	}
 	else if(userParametrsStruct.researchedFunctions==SetGetQNXTimeOfClock){
@@ -116,14 +180,14 @@ int main(int argc, char *argv[]) {
 			perror( "[ERROR]: ClockTime" );
 			return EXIT_FAILURE;
 		}
-		std::cout<<"[INFO]: Current time is: "<<oldTime.tv_sec<<" seconds"<<oldTime.tv_nsec<<" nanoseconds"<<std::endl;
+		std::cout<<"[INFO]: Current time is: "<<oldTime<<" nanoseconds"<<std::endl;
 
 
 		if(ClockTime(CLOCK_REALTIME, &oldTime, &newTime) == -1 ) {
 			perror( "clock settime" );
 			return EXIT_FAILURE;
 		}
-		std::cout<<"[INFO]: New time is set. Time is: "<<newTimeStart.tv_sec<<" seconds"<<newTimeStart.tv_nsec<<" nanoseconds"<<std::endl;
+		std::cout<<"[INFO]: New time is set. Time is: "<<newTime<<" nanoseconds"<<std::endl;
 		std::cout<<"[INFO]: Restoring old time"<<std::endl;
 		return EXIT_SUCCESS;
 	}

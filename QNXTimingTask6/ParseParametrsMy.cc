@@ -23,7 +23,7 @@ int parseParametrsMy(int argc, char *argv[], UserParametrsStruct *userParametrsS
 		case 'B':
 			counter1++;
 			userParametrsStruct->researchedFunctions = SetGetPOSIXTimeOfClock;
-			userParametrsStruct->secondsFrom1970=atol(optarg);
+			userParametrsStruct->secondsFrom1970=atoll(optarg);
 			break;
 		case 'C':
 			counter1++;
