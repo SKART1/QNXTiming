@@ -10,7 +10,7 @@
 	#include <cstdlib>
 	#include <iostream>
 	#include <unistd.h>
-	#include <stdint.h > 	//for uint64_t
+	#include <inttypes.h>.h > 	//for uint64_t
 	#include <unistd.h> 	//for getopt
 	#include <stdlib.h>     //for atol
 	#include <sys/syspage.h> //for SYSPAGE_ENTRY(qtime)
