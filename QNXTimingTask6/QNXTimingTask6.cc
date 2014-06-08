@@ -175,6 +175,7 @@ int main(int argc, char *argv[]) {
 	else if(userParametrsStruct.researchedFunctions==SetGetQNXTimeOfClock){
 		uint64_t newTime;
 		uint64_t oldTime;
+		newTime=userParametrsStruct.nanosecAbsoluteTime;
 
 		if(ClockTime(CLOCK_REALTIME, &newTime, &oldTime) == -1 ) {
 			perror( "[ERROR]: ClockTime" );

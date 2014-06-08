@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 	};
 	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 3,"[INFO]: After TimerTimeout registering. Before MsgReceive!");
     MsgReceive(chid,msg,msgSize,NULL);
-    if (rval == ETIMEDOUT) {
+    if (rval<0 && errno == ETIMEDOUT) {
     	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 3,"[INFO]: After MsgReceive timeout!");
 		printf ("[INFO]: MAIN_THREAD: MsgRecieve do not received!\n");
 	}

@@ -7,20 +7,12 @@ QCONFIG=qconfig.mk
 endif
 include $(QCONFIG)
 
-#===== USEFILE - the file containing the usage message for the application. 
 USEFILE=
 
 # Next lines are for C++ projects only
-
 EXTRA_SUFFIXES+=cxx cpp
-
-#===== LDFLAGS - add the flags to the linker command line.
 LDFLAGS+=-lang-c++
-
 VFLAG_g=-gstabs+
-
-#===== LIBS - a space-separated list of library items to be included in the link.
-LIBS+=gf
 
 include $(MKFILES_ROOT)/qmacros.mk
 ifndef QNX_INTERNAL
@@ -29,7 +21,5 @@ endif
 include $(QNX_INTERNAL)
 
 include $(MKFILES_ROOT)/qtargets.mk
-
 OPTIMIZE_TYPE_g=none
 OPTIMIZE_TYPE=$(OPTIMIZE_TYPE_$(filter g, $(VARIANTS)))
-
