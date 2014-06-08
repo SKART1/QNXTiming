@@ -4,7 +4,22 @@
 /*------------------------------------------------------------------------------------*/
 static void sigusr1Handler(int signo,siginfo_t *info, void *other) {
 	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 1, "[INFO]: Entering SIGUSR1 handler");
-	access("dev/F_OK);
+	if(access("dev/io-usb/io-usb", F_OK )==-1){
+		switch(errno){
+		case EACCES:
+			std::cerr<<"[WARNING]: File is not accessible!"<<std::endl;
+			break;
+		case ENOSYS:
+			std::cerr<<"[WARNING]: File system do not support this function!"<<std::endl;
+			break;
+		case ROFS:
+
+			break;
+		default:
+			perror("[ERROR]: access");
+			break;
+		}
+	};
 	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 2, "[INFO]: Exiting SIGUSR1 handler");
 }
 /*------------------------------------------------------------------------------------*/
@@ -38,11 +53,11 @@ int inline setTimerRelativeSingleSignal(timer_t *timerDescriptor){
 	}
 	//Set timer mode
 
-	timeDescriptorStruct.it_value.tv_sec = 5;
+	timeDescriptorStruct.it_value.tv_sec = 2;
 	timeDescriptorStruct.it_value.tv_nsec= 0;
 
 	//Single. Means not repeat
-	timeDescriptorStruct.it_interval.tv_sec =  NULL;
+	timeDescriptorStruct.it_interval.tv_sec =  2;
 	timeDescriptorStruct.it_interval.tv_nsec = NULL;
 
 	//Set new type
@@ -54,6 +69,11 @@ int inline setTimerRelativeSingleSignal(timer_t *timerDescriptor){
 
 
 int main(int argc, char *argv[]) {
-	std::cout << "Welcome to the QNX Momentics IDE" << std::endl;
+	timer_t timerDescriptor;
+	setTimerRelativeSingleSignal(&timerDescriptor);
+
+	for (;;) {
+		pause();
+	}
 	return EXIT_SUCCESS;
 }
