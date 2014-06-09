@@ -21,9 +21,9 @@
 *.app
 
 #Momentics
-.project
-.qnx_internal.mk
-.cproject
+#.project
+#.qnx_internal.mk
+#.cproject
 .settings
 
 
