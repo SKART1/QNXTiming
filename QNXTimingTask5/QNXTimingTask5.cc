@@ -1,10 +1,14 @@
 #include <cstdlib>
 #include <iostream>
+#include <sys/trace.h>
+#include <unistd.h>
+#include <errno.h>
+#include <stdio.h>
 
 /*------------------------------------------------------------------------------------*/
 static void sigusr1Handler(int signo,siginfo_t *info, void *other) {
 	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 1, "[INFO]: Entering SIGUSR1 handler");
-	if(access("dev/io-usb/io-usb", F_OK )==-1){
+	if(access("/dev/io-usb/io-usb", F_OK )==-1){
 		switch(errno){
 		case EACCES:
 			std::cerr<<"[WARNING]: File is not accessible!"<<std::endl;
@@ -12,7 +16,7 @@ static void sigusr1Handler(int signo,siginfo_t *info, void *other) {
 		case ENOSYS:
 			std::cerr<<"[WARNING]: File system do not support this function!"<<std::endl;
 			break;
-		case ROFS:
+		case EROFS:
 
 			break;
 		default:
