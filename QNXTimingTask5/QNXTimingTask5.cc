@@ -8,16 +8,16 @@
 /*------------------------------------------------------------------------------------*/
 static void sigusr1Handler(int signo,siginfo_t *info, void *other) {
 	TraceEvent(_NTO_TRACE_INSERTUSRSTREVENT, 1, "[INFO]: Entering SIGUSR1 handler");
+	//Check device availability (usb)
 	if(access("/dev/io-usb/io-usb", F_OK )==-1){
 		switch(errno){
+		//Problems with access
 		case EACCES:
 			std::cerr<<"[WARNING]: File is not accessible!"<<std::endl;
 			break;
+		//File system do not support such type of operation
 		case ENOSYS:
 			std::cerr<<"[WARNING]: File system do not support this function!"<<std::endl;
-			break;
-		case EROFS:
-
 			break;
 		default:
 			perror("[ERROR]: access");
